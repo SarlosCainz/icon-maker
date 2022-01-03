@@ -1,0 +1,12 @@
+version: '2'
+
+services:
+  foo:
+    image: sarlos/icon-maker
+    container_name: icon-maker
+    volumes:
+      - $PWD/config.ini:/app/config.ini
+      - $PWD/static:/app/static
+    ports:
+      - 80:80
+    restart: unless-stopped
