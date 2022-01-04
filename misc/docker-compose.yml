@@ -1,7 +1,7 @@
 version: '2'
 
 services:
-  foo:
+  icon-maker:
     image: sarlos/icon-maker
     container_name: icon-maker
     volumes:

@@ -3,7 +3,7 @@ import axios from "axios";
 import {Box, Form, Button, Element} from "react-bulma-components";
 import Field from "./Field";
 import ResetButton from "./ResetButton";
-import {faTwitterSquare} from "@fortawesome/free-brands-svg-icons";
+import {faTwitterSquare, faGithub} from "@fortawesome/free-brands-svg-icons";
 import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
 
 
@@ -78,23 +78,25 @@ function Body() {
 
         Promise.all(posts)
             .then( res => {
-                URL.revokeObjectURL(icon);
-                let url = URL.createObjectURL(res[0].data);
-                setIcon(url);
-                if (res.length > 1) {
-                    url = URL.createObjectURL(res[1].data);
-                    setDownloadFile("icon.zip");
-                } else {
-                    setDownloadFile("icon.png");
+                if (res[0].status === 200) {
+                    URL.revokeObjectURL(icon);
+                    let url = URL.createObjectURL(res[0].data);
+                    setIcon(url);
+                    if (res.length > 1) {
+                        url = URL.createObjectURL(res[1].data);
+                        setDownloadFile("icon.zip");
+                    } else {
+                        setDownloadFile("icon.png");
+                    }
+                    setDownloadUrl(url);
                 }
-                setDownloadUrl(url);
             })
             .catch(err => {
-                const status = err[0].response.status;
+                const status = err.response.status;
                 if (status === 413) {
-                    alert("Client intended to send too large body.");
+                    alert("Client intended to send too large body.\nThe size of the image file that can be handled is up to 500KByte.");
                 } else {
-                    alert(err[0].response.statusText);
+                    alert(err.response.statusText);
                 }
             });
     }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
@@ -170,6 +172,9 @@ function Body() {
                         <Element flexGrow={2} textAlign="right">
                             <Element renderAs="a" href="https://twitter.com/sarlos_cainz">
                                 <FontAwesomeIcon icon={faTwitterSquare} size="2x" color="#aaa"/>
+                            </Element>
+                            <Element renderAs="a" href="https://github.com/SarlosCainz/icon-maker" ml={2}>
+                                <FontAwesomeIcon icon={faGithub} size="2x" color="#aaa"/>
                             </Element>
                         </Element>
                     </Element>
@@ -254,7 +259,7 @@ function Body() {
                     </Element>
                     <hr/>
                     {/***** Image *****/}
-                    <Field label="Image" note="The file size is up to 512KByte.">
+                    <Field label="Image" note="* The file size is up to 500KByte.">
                         <Form.InputFile onChange={handleChangeImage} filename={filename}
                                         inputProps={{accept: "image/jpeg, image/png"}}/>
                         <ResetButton onClick={handleClearImage}/>
