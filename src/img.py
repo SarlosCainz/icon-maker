@@ -1,6 +1,6 @@
 import io
 import zipfile
-from PIL import Image, ImageDraw, ImageFont, ImageOps
+from PIL import Image, ImageDraw, ImageFont
 import util
 
 font_styles = ["Thin", "Light", "Regular", "Medium", "Bold", "Black"]
@@ -93,7 +93,23 @@ def make(params, files, config, logger):
         icon.putalpha(style_img)
 
     file = io.BytesIO()
-    icon.save(file, "png")
-    file.seek(0)
+    if for_ios:
+        with zipfile.ZipFile(file, "w", compression=zipfile.ZIP_DEFLATED) as zip:
+            zip.writestr("icon_1024.png", make_data(icon))
+            for size in [20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180]:
+                zip.writestr("icon_{}.png".format(size), make_data(icon, size=size))
+    else:
+        icon.save(file, "png")
 
+    file.seek(0)
     return file
+
+def make_data(icon, size=None):
+    if size is not None:
+        icon = icon.resize((size, size))
+
+    icon_file = io.BytesIO()
+    icon.save(icon_file, "png")
+    icon_file.seek(0)
+
+    return icon_file.getvalue()

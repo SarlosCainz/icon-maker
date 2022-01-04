@@ -36,6 +36,7 @@ function Body() {
     const [imageOffsetX, setImageOffsetX] = useState(0);
     const [imageOffsetY, setImageOffsetY] = useState(0);
     const [downloadUrl, setDownloadUrl] = useState("");
+    const [downloadFile, setDownloadFile] = useState("");
     const [forIOS, setForIOS] = useState(0);
 
     useEffect(() => {
@@ -63,24 +64,37 @@ function Body() {
         data.append("image_rotate", 360 - imageRotate - 180);
         data.append("image_offset_x", imageOffsetX);
         data.append("image_offset_y", imageOffsetY);
-        data.append("for_ios", forIOS);
 
         const config = {
             responseType: 'blob'
         };
-        axios.post(img_api, data, config)
-            .then(res => {
+        let posts = [];
+        posts.push(axios.post(img_api, data, config));
+
+        if (forIOS) {
+            data.append("for_ios", forIOS);
+            posts.push(axios.post(img_api, data, config));
+        }
+
+        Promise.all(posts)
+            .then( res => {
                 URL.revokeObjectURL(icon);
-                const url = URL.createObjectURL(res.data);
+                let url = URL.createObjectURL(res[0].data);
                 setIcon(url);
+                if (res.length > 1) {
+                    url = URL.createObjectURL(res[1].data);
+                    setDownloadFile("icon.zip");
+                } else {
+                    setDownloadFile("icon.png");
+                }
                 setDownloadUrl(url);
             })
             .catch(err => {
-                const status = err.response.status;
+                const status = err[0].response.status;
                 if (status === 413) {
                     alert("Client intended to send too large body.");
                 } else {
-                    alert(err.response.statusText);
+                    alert(err[0].response.statusText);
                 }
             });
     }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
@@ -128,7 +142,7 @@ function Body() {
                     </Form.Checkbox>
                 </Element>
                 <Element mt={3}>
-                    <Button renderAs="a" color="dark" rounded={true} href={downloadUrl} download="icon.png">Download</Button>
+                    <Button renderAs="a" color="dark" rounded={true} href={downloadUrl} download={downloadFile}>Download</Button>
                 </Element>
             </Element>
 
@@ -240,7 +254,7 @@ function Body() {
                     </Element>
                     <hr/>
                     {/***** Image *****/}
-                    <Field label="Image">
+                    <Field label="Image" note="The file size is up to 512KByte.">
                         <Form.InputFile onChange={handleChangeImage} filename={filename}
                                         inputProps={{accept: "image/jpeg, image/png"}}/>
                         <ResetButton onClick={handleClearImage}/>

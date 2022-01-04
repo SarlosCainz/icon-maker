@@ -17,7 +17,7 @@ config.read("config.ini", 'UTF-8')
 @app.route('/api/img', methods=['POST'])
 def api_img():
     img_file = img.make(request.form, request.files, config, app.logger)
-    response = send_file(img_file, attachment_filename="icon.png", as_attachment=True)
+    response = send_file(img_file, attachment_filename="icon", as_attachment=True)
 
     return response
 
