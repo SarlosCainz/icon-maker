@@ -62,7 +62,7 @@ def make(params, files, config, logger):
             length = draw.textlength(line, font=font)
             x = icon.size[0] / 2 - length / 2 + offset_x
             font_draw.multiline_text((x, y), line, font=font, fill=text_color)
-            y += font_size
+            y += font_size - 6
 
         font_rotate = util.get_int_param(params, "font_rotate", 0)
         font_img = font_img.rotate(font_rotate)

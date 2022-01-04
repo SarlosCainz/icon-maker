@@ -12,16 +12,16 @@ function Body() {
     const fontSizeMin = 60;
     const fontSizeMax = 400;
     const fontSizeDefault = 250
-    const rotateDefault = 0
+    const rotateDefault = 180
 
     const [fonts, setFonts] = useState([]);
     const [icon, setIcon] = useState("");
     const [style, setStyle] = useState(1);
     const [textColor, setTextColor] = useState("#f0f0f0");
     const [bgColor, setBgColor] = useState("#404040");
-    const [text, setText] = useState("");
-    const [font, setFont] = useState(0);
-    const [fontStyle, setFontStyle] = useState(2);
+    const [text, setText] = useState("M");
+    const [font, setFont] = useState(1);
+    const [fontStyle, setFontStyle] = useState(3);
     const [fontSize, setFontSize] = useState(fontSizeDefault);
     const [fontRotate, setFontRotate] = useState(rotateDefault);
     const [textOffsetX, setTextOffsetX] = useState(0);
@@ -53,11 +53,11 @@ function Body() {
         data.append("text_offset_x", textOffsetX);
         data.append("text_offset_y", textOffsetY);
         data.append("font_size", fontSize);
-        data.append("font_rotate", fontRotate);
+        data.append("font_rotate", 360 - fontRotate - 180);
         data.append("round", round);
         data.append("image", image);
         data.append("image_size", imageSize);
-        data.append("image_rotate", imageRotate);
+        data.append("image_rotate", 360 - imageRotate - 180);
         data.append("image_offset_x", imageOffsetX);
         data.append("image_offset_y", imageOffsetY);
 
@@ -66,10 +66,18 @@ function Body() {
         };
         axios.post(img_api, data, config)
             .then(res => {
-                URL.revokeObjectURL(icon);
-                const url = URL.createObjectURL(res.data);
-                setIcon(url);
-                setDownloadUrl(url);
+                    URL.revokeObjectURL(icon);
+                    const url = URL.createObjectURL(res.data);
+                    setIcon(url);
+                    setDownloadUrl(url);
+            })
+            .catch(err => {
+                const status = err.response.status;
+                if (status === 413) {
+                    alert("Client intended to send too large body.");
+                } else {
+                    alert(err.response.statusText);
+                }
             });
     }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
         round, image, imageSize, imageRotate, imageOffsetX, imageOffsetY]);
@@ -91,9 +99,9 @@ function Body() {
     }, []);
 
     return (
-            <Box display="flex">
+            <Box display="flex" flexWrap="wrap">
                 <IconImage icon={icon} url={downloadUrl}/>
-                <Element ml={5}>
+                <Element ml={5} flexGrow={2}>
                     <Element>
                         <Element display="flex">
                             {/***** Text *****/}
@@ -145,8 +153,8 @@ function Body() {
                                     }} value={fontStyle}>Black</Form.Radio>
 
                                 </Field>
-                                <Element display="flex">
-                                    <Element>
+                                <Element display="flex" flexWrap="wrap">
+                                    <Element mr={3}>
                                         {/***** Text Size *****/}
                                         <Field label="Size">
                                             <input step="1" min={fontSizeMin} max={fontSizeMax}
@@ -168,7 +176,7 @@ function Body() {
                                             }}/>
                                         </Field>
                                     </Element>
-                                    <Element ml={3}>
+                                    <Element>
                                         {/***** Text X Offset *****/}
                                         <Field label="X Offset">
                                             <input step="1" min={-100} max={100} value={textOffsetX} onChange={(e) => {
@@ -199,8 +207,8 @@ function Body() {
                                             inputProps={{accept: "image/jpeg, image/png"}}/>
                             <ResetButton onClick={handleClearImage}/>
                         </Field>
-                        <Element display="flex">
-                            <Element>
+                        <Element display="flex" flexWrap="wrap">
+                            <Element mr={3}>
                                 {/***** Image Size *****/}
                                 <Field label="Size">
                                     <input step="5" min="30" max="200" value={imageSize} onChange={(e) => {
@@ -221,7 +229,7 @@ function Body() {
                                     }}/>
                                 </Field>
                             </Element>
-                            <Element ml={3}>
+                            <Element>
                                 {/***** Image X Offset *****/}
                                 <Field label="X Offset">
                                     <input step="1" min={-100} max={100}

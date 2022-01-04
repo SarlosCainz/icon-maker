@@ -7,13 +7,19 @@ RUN pip3 install flack flask-cors pillow uwsgi
 
 RUN mkdir /var/www/icon-maker
 COPY ui/dist /var/www/icon-maker/
-COPY misc/default.conf /etc/nginx/conf.d/
+COPY misc/nginx.conf /etc/nginx/
 
 WORKDIR /app
 COPY src ./
 COPY misc/app.ini ./
 
 VOLUME /app/static
+EXPOSE 80
+
+RUN set -eux \
+ && rm -r /var/log/nginx/*.log \
+ && ln -s /dev/stdout /var/log/nginx/access.log \
+ && ln -s /dev/stderr /var/log/nginx/error.log
 
 COPY misc/entrypoint.sh /
 ENTRYPOINT /entrypoint.sh
