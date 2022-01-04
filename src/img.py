@@ -1,5 +1,5 @@
 import io
-import os.path
+import zipfile
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 import util
 
@@ -7,7 +7,9 @@ font_styles = ["Thin", "Light", "Regular", "Medium", "Bold", "Black"]
 
 
 def make(params, files, config, logger):
-    icon_size = (256, 256)
+    for_ios = util.get_int_param(params, "for_ios", 0)
+
+    icon_size = (256, 256) if for_ios == 0 else (1024, 1024)
     bg_color = util.get_param(params, "bg_color", "#000000")
 
     icon = Image.new("RGB", icon_size, bg_color)
@@ -41,8 +43,10 @@ def make(params, files, config, logger):
     if text:
         text_color = util.get_param(params, "text_color", "#ffffff")
         font_idx = util.get_param(params, "font", 0)
-        font_size = util.get_int_param(params, "font_size", 100)
         font_style = util.get_int_param(params, "font_style", 2)
+        font_size = util.get_int_param(params, "font_size", 100)
+        if for_ios:
+            font_size *= 4
 
         font = config.get("fonts", font_idx)
         font_style_name = font_styles[font_style]
