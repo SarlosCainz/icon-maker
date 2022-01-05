@@ -1,6 +1,9 @@
 import io
 import zipfile
+
 from PIL import Image, ImageDraw, ImageFont
+from wand.image import Image as WImage
+
 import util
 
 font_styles = ["Thin", "Light", "Regular", "Medium", "Bold", "Black"]
@@ -8,8 +11,9 @@ font_styles = ["Thin", "Light", "Regular", "Medium", "Bold", "Black"]
 
 def make(params, files, config, logger):
     for_ios = util.get_int_param(params, "for_ios", 0)
+    for_web = util.get_int_param(params, "for_web", 0)
 
-    icon_size = (256, 256) if for_ios == 0 else (1024, 1024)
+    icon_size = (1024, 1024) if for_ios else (512, 512) if for_web else (256, 256)
     bg_color = util.get_param(params, "bg_color", "#000000")
 
     icon = Image.new("RGB", icon_size, bg_color)
@@ -28,8 +32,8 @@ def make(params, files, config, logger):
         image_rotate = util.get_int_param(params, "image_rotate", 0)
         image = image.rotate(image_rotate)
 
-        offset_x = util.get_int_param(params, "image_offset_x", 0)
-        offset_y = util.get_int_param(params, "image_offset_y", 0)
+        offset_x = util.get_int_param(params, "image_offset_x", 0, for_ios, for_web)
+        offset_y = util.get_int_param(params, "image_offset_y", 0, for_ios, for_web)
 
         x = int((icon_size[0] - image.size[0]) / 2) + offset_x
         y = int((icon_size[1] - image.size[1]) / 2) + offset_y
@@ -44,17 +48,15 @@ def make(params, files, config, logger):
         text_color = util.get_param(params, "text_color", "#ffffff")
         font_idx = util.get_param(params, "font", 0)
         font_style = util.get_int_param(params, "font_style", 2)
-        font_size = util.get_int_param(params, "font_size", 100)
-        if for_ios:
-            font_size *= 4
+        font_size = util.get_int_param(params, "font_size", 100, for_ios, for_web)
 
         font = config.get("fonts", font_idx)
         font_style_name = font_styles[font_style]
         font_name = "static/{}-{}.ttf".format(font, font_style_name)
         font = ImageFont.truetype(font_name, font_size)
 
-        offset_x = util.get_int_param(params, "text_offset_x", 0)
-        offset_y = util.get_int_param(params, "text_offset_y", 0)
+        offset_x = util.get_int_param(params, "text_offset_x", 0, for_ios, for_web)
+        offset_y = util.get_int_param(params, "text_offset_y", 0, for_ios, for_web)
 
         font_img = Image.new("RGBA", icon_size, (0, 0, 0, 0))
         font_draw = ImageDraw.Draw(font_img)
@@ -79,7 +81,8 @@ def make(params, files, config, logger):
         style_draw = ImageDraw.Draw(style_img)
 
         if style == 1:
-            r = util.get_int_param(params, "round", 0)
+            r = util.get_int_param(params, "round", 0, for_ios, for_web)
+
             style_draw.rectangle((0, r, icon_size[0] - 1, icon_size[1] - 1 - r), fill=255)
             style_draw.rectangle((r, 0, icon_size[0] - 1 - r, icon_size[1] - 1), fill=255)
             style_draw.pieslice((0, 0) + (r * 2, r * 2), 180, 270, fill=255)
@@ -92,24 +95,48 @@ def make(params, files, config, logger):
             style_draw.ellipse((0, 0, icon_size[0] - 1, icon_size[1] - 1), fill=255)
         icon.putalpha(style_img)
 
+    logger.debug("forIOS = {}, forWeb = {}".format(for_ios, for_web))
     file = io.BytesIO()
     if for_ios:
-        with zipfile.ZipFile(file, "w", compression=zipfile.ZIP_DEFLATED) as zip:
-            zip.writestr("icon_1024.png", make_data(icon))
+        with zipfile.ZipFile(file, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr("icon_1024.png", get_bytes(icon))
             for size in [20, 29, 40, 58, 60, 76, 80, 87, 120, 152, 167, 180]:
-                zip.writestr("icon_{}.png".format(size), make_data(icon, size=size))
+                z.writestr("icon_{}.png".format(size), get_bytes(icon, size=size))
+    elif for_web:
+        with zipfile.ZipFile(file, "w", compression=zipfile.ZIP_DEFLATED) as z:
+            z.writestr("favicon.ico", make_favicon(icon))
+            z.writestr("apple-touch-icon.png", get_bytes(icon, 180))
+            z.writestr("icon-192.png", get_bytes(icon, 192))
+            z.writestr("icon-512.png", get_bytes(icon, 512))
+            z.write("manifest.webmanifest")
+            z.write("sample.html")
     else:
         icon.save(file, "png")
 
     file.seek(0)
     return file
 
-def make_data(icon, size=None):
+
+def get_bytes(icon, size=None):
     if size is not None:
         icon = icon.resize((size, size))
 
-    icon_file = io.BytesIO()
-    icon.save(icon_file, "png")
-    icon_file.seek(0)
+    with io.BytesIO() as icon_file:
+        icon.save(icon_file, "png")
+        icon_file.seek(0)
+        value = icon_file.getvalue()
 
-    return icon_file.getvalue()
+    return value
+
+
+def make_favicon(icon):
+    favicon = io.BytesIO()
+    with WImage(blob=get_bytes(icon, 32)) as png32:
+        ico32 = png32.convert("ico")
+        with WImage(blob=get_bytes(icon, 16)) as png16:
+            ico16 = png16.convert("ico")
+            ico32.sequence.append(ico16)
+        ico32.save(file=favicon)
+    favicon.seek(0)
+
+    return favicon.getvalue()

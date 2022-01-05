@@ -15,6 +15,7 @@ function Body() {
     const fontSizeDefault = 250
     const rotateDefault = 180
 
+    const [sendData, setSendData] = useState(null);
     const [fonts, setFonts] = useState([]);
     const [icon, setIcon] = useState("");
     const [style, setStyle] = useState(1);
@@ -36,8 +37,8 @@ function Body() {
     const [imageOffsetX, setImageOffsetX] = useState(0);
     const [imageOffsetY, setImageOffsetY] = useState(0);
     const [downloadUrl, setDownloadUrl] = useState("");
-    const [downloadFile, setDownloadFile] = useState("");
     const [forIOS, setForIOS] = useState(0);
+    const [forWeb, setForWeb] = useState(0);
 
     useEffect(() => {
         axios.get(api_url + "fonts")
@@ -64,43 +65,22 @@ function Body() {
         data.append("image_rotate", 360 - imageRotate - 180);
         data.append("image_offset_x", imageOffsetX);
         data.append("image_offset_y", imageOffsetY);
+        setSendData(data);
 
         const config = {
             responseType: 'blob'
         };
-        let posts = [];
-        posts.push(axios.post(img_api, data, config));
-
-        if (forIOS) {
-            data.append("for_ios", forIOS);
-            posts.push(axios.post(img_api, data, config));
-        }
-
-        Promise.all(posts)
+        axios.post(img_api, data, config)
             .then( res => {
-                if (res[0].status === 200) {
+                if (res.status === 200) {
                     URL.revokeObjectURL(icon);
-                    let url = URL.createObjectURL(res[0].data);
+                    let url = URL.createObjectURL(res.data);
                     setIcon(url);
-                    if (res.length > 1) {
-                        url = URL.createObjectURL(res[1].data);
-                        setDownloadFile("icon.zip");
-                    } else {
-                        setDownloadFile("icon.png");
-                    }
-                    setDownloadUrl(url);
                 }
             })
-            .catch(err => {
-                const status = err.response.status;
-                if (status === 413) {
-                    alert("Client intended to send too large body.\nThe size of the image file that can be handled is up to 500KByte.");
-                } else {
-                    alert(err.response.statusText);
-                }
-            });
+            .catch(error);
     }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
-        round, image, imageSize, imageRotate, imageOffsetX, imageOffsetY, forIOS]);
+        round, image, imageSize, imageRotate, imageOffsetX, imageOffsetY]);
 
     const handleChangeImage = useCallback((e) => {
         console.log(e.target.files[0].name);
@@ -118,6 +98,11 @@ function Body() {
         setStyle(1);
     }, []);
 
+    const handleChangeForWeb = useCallback( (e) => {
+        const value = e.target.checked ? 1 : 0
+        setForWeb(value)
+    }, []);
+
     const handleChangeForIOS = useCallback( (e) => {
         const value = e.target.checked ? 1 : 0
         setForIOS(value);
@@ -125,6 +110,7 @@ function Body() {
             if (style != 0) {
                 setPrevStyle(style);
                 setStyle(0);
+                setForWeb(0)
             }
         } else {
             if (style != prevStyle) {
@@ -133,18 +119,55 @@ function Body() {
         }
     }, [style, prevStyle]);
 
+    const handleDownload = useCallback( () => {
+        const data = sendData;
+        data.append("for_ios", forIOS);
+        data.append("for_web", forWeb);
+
+        const config = {
+            responseType: 'blob'
+        };
+        axios.post(img_api, data, config)
+            .then ( res => {
+                URL.revokeObjectURL(downloadUrl);
+                const url = URL.createObjectURL(res.data);
+                setDownloadUrl(url);
+
+                const elm = document.createElement("a");
+                elm.setAttribute("href", url)
+                const filename = (forIOS || forWeb) ? "icon.zip" : "icon.png";
+                elm.setAttribute("download", filename);
+                elm.click();
+            })
+            .catch( error );
+    }, [sendData, forIOS, forWeb]);
+
+    const error = useCallback( err => {
+        const status = err.response.status;
+        if (status === 413) {
+            alert("Client intended to send too large body.\nThe size of the image file that can be handled is up to 500KByte.");
+        } else {
+            alert(err.response.statusText);
+        }
+    }, []);
+
     return (
         <Box display="flex" flexWrap="wrap">
-            {/*<IconImage icon={icon} url={downloadUrl} forIOS={forIOS} setForIOS={setForIOS} />*/}
             <Element textAlign="center" mx={3} flexGrow={1} mb={5}>
                 <img src={icon} alt="image" style={{width: "256px"}}/>
                 <Element mt={3}>
-                    <Form.Checkbox value={1} onChange={handleChangeForIOS}>
-                        for iOS
-                    </Form.Checkbox>
+                    <Element display="inline-block" textAlign="left">
+                        <Form.Checkbox value={1} onChange={handleChangeForIOS}>
+                            for iPhone/iPad App
+                        </Form.Checkbox>
+                        <br />
+                        <Form.Checkbox value={1} checked={forWeb == 1} disabled={forIOS == 1} onChange={handleChangeForWeb}>
+                            for Web
+                        </Form.Checkbox>
+                    </Element>
                 </Element>
                 <Element mt={3}>
-                    <Button renderAs="a" color="dark" rounded={true} href={downloadUrl} download={downloadFile}>Download</Button>
+                    <Button renderAs="a" color="dark" rounded={true} onClick={handleDownload}>Download</Button>
                 </Element>
             </Element>
 
