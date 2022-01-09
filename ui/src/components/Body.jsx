@@ -1,41 +1,39 @@
-import {useState, useEffect, useCallback} from "react";
+import {useState, useEffect, useCallback, useContext} from "react";
 import axios from "axios";
 import {Box, Form, Button, Element} from "react-bulma-components";
 import Field from "./Field";
 import ResetButton from "./ResetButton";
-import {faTwitterSquare, faGithub} from "@fortawesome/free-brands-svg-icons";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import {values} from "../values";
+import {AppContext} from "../app";
 
 
 function Body() {
+    const appContext = useContext(AppContext);
+
     const api_url = import.meta.env.VITE_API_URL;
     const img_api = api_url + "img";
-    const fontSizeMin = 60;
-    const fontSizeMax = 400;
-    const fontSizeDefault = 250
-    const rotateDefault = 180
 
     const [sendData, setSendData] = useState(null);
     const [fonts, setFonts] = useState([]);
     const [icon, setIcon] = useState("");
-    const [style, setStyle] = useState(1);
-    const [prevStyle, setPrevStyle] = useState(1);
-    const [textColor, setTextColor] = useState("#f0f0f0");
-    const [bgColor, setBgColor] = useState("#404040");
-    const [text, setText] = useState("M");
-    const [font, setFont] = useState(1);
-    const [fontStyle, setFontStyle] = useState(3);
-    const [fontSize, setFontSize] = useState(fontSizeDefault);
-    const [fontRotate, setFontRotate] = useState(rotateDefault);
-    const [textOffsetX, setTextOffsetX] = useState(0);
-    const [textOffsetY, setTextOffsetY] = useState(0);
-    const [round, setRound] = useState(30);
+    const [style, setStyle] = useState(values.default.style);
+    const [prevStyle, setPrevStyle] = useState(values.default.style);
+    const [textColor, setTextColor] = useState(values.default.textColor);
+    const [bgColor, setBgColor] = useState(values.default.bgColor);
+    const [text, setText] = useState(values.default.text);
+    const [font, setFont] = useState(values.default.font);
+    const [fontStyle, setFontStyle] = useState(values.default.fontStyle);
+    const [fontSize, setFontSize] = useState(values.default.fontSize);
+    const [fontRotate, setFontRotate] = useState(values.default.rotate);
+    const [textOffsetX, setTextOffsetX] = useState(values.default.textOffsetX);
+    const [textOffsetY, setTextOffsetY] = useState(values.default.textOffsetX);
+    const [round, setRound] = useState(values.default.round);
     const [image, setImage] = useState(null);
     const [filename, setFilename] = useState("");
-    const [imageSize, setImageSize] = useState(100);
-    const [imageRotate, setImageRotate] = useState(rotateDefault);
-    const [imageOffsetX, setImageOffsetX] = useState(0);
-    const [imageOffsetY, setImageOffsetY] = useState(0);
+    const [imageSize, setImageSize] = useState(values.default.imageSize);
+    const [imageRotate, setImageRotate] = useState(values.default.rotate);
+    const [imageOffsetX, setImageOffsetX] = useState(values.default.imageOffsetX);
+    const [imageOffsetY, setImageOffsetY] = useState(values.default.imageOffsetY);
     const [downloadUrl, setDownloadUrl] = useState("");
     const [forIOS, setForIOS] = useState(0);
     const [forWeb, setForWeb] = useState(0);
@@ -82,8 +80,27 @@ function Body() {
     }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
         round, image, imageSize, imageRotate, imageOffsetX, imageOffsetY]);
 
+    useEffect( () => {
+        setText(values.default.text);
+        setTextColor(values.default.textColor);
+        setTextOffsetX(values.default.textOffsetX);
+        setTextOffsetY(values.default.textOffsetY);
+        setFont(values.default.font);
+        setFontSize(values.default.fontSize);
+        setFontStyle(values.default.fontStyle);
+        setFontRotate(values.default.rotate);
+        setImage(null);
+        setFilename("");
+        setImageSize(values.default.imageSize);
+        setImageOffsetX(values.default.imageOffsetX);
+        setImageOffsetY(values.default.imageOffsetY);
+        setImageRotate(values.default.rotate);
+        setBgColor(values.default.bgColor);
+        setStyle(values.default.style);
+        setRound(values.default.round);
+    }, [appContext.resetAll.value]);
+
     const handleChangeImage = useCallback((e) => {
-        console.log(e.target.files[0].name);
         setImage(e.target.files[0]);
         setFilename(e.target.files[0].name);
     }, []);
@@ -152,7 +169,7 @@ function Body() {
     }, []);
 
     return (
-        <Box display="flex" flexWrap="wrap">
+        <Element mt={3} display="flex" flexWrap="wrap">
             <Element textAlign="center" mx={3} flexGrow={1} mb={5}>
                 <img src={icon} alt="image" style={{width: "256px"}}/>
                 <Element mt={3}>
@@ -192,14 +209,6 @@ function Body() {
                                 })}
                             </Form.Select>
                         </Field>
-                        <Element flexGrow={2} textAlign="right">
-                            <Element renderAs="a" href="https://twitter.com/sarlos_cainz">
-                                <FontAwesomeIcon icon={faTwitterSquare} size="2x" color="#aaa"/>
-                            </Element>
-                            <Element renderAs="a" href="https://github.com/SarlosCainz/icon-maker" ml={2}>
-                                <FontAwesomeIcon icon={faGithub} size="2x" color="#aaa"/>
-                            </Element>
-                        </Element>
                     </Element>
                     <Element display="flex">
                         <Element>
@@ -237,12 +246,12 @@ function Body() {
                                 <Element mr={3}>
                                     {/***** Text Size *****/}
                                     <Field label="Size">
-                                        <input step="1" min={fontSizeMin} max={fontSizeMax}
+                                        <input step="1" min={values.default.fontSizeMin} max={values.default.fontSizeMax}
                                                value={fontSize} onChange={(e) => {
                                             setFontSize(e.target.value)
                                         }} type="range"/>
                                         <ResetButton onClick={() => {
-                                            setFontSize(fontSizeDefault)
+                                            setFontSize(values.default.fontSize)
                                         }}/>
                                     </Field>
                                     {/***** Text Rotate *****/}
@@ -252,7 +261,7 @@ function Body() {
                                             setFontRotate(e.target.value)
                                         }} type="range"/>
                                         <ResetButton onClick={() => {
-                                            setFontRotate(rotateDefault)
+                                            setFontRotate(values.default.rotate)
                                         }}/>
                                     </Field>
                                 </Element>
@@ -263,7 +272,7 @@ function Body() {
                                             setTextOffsetX(e.target.value)
                                         }} type="range"/>
                                         <ResetButton onClick={() => {
-                                            setTextOffsetX(0)
+                                            setTextOffsetX(values.default.textOffsetX)
                                         }}/>
                                     </Field>
                                     {/***** Text Y Offset *****/}
@@ -273,7 +282,7 @@ function Body() {
                                                    setTextOffsetY(e.target.value)
                                                }} type="range"/>
                                         <ResetButton onClick={() => {
-                                            setTextOffsetY(0)
+                                            setTextOffsetY(values.default.textOffsetY)
                                         }}/>
                                     </Field>
                                 </Element>
@@ -295,7 +304,7 @@ function Body() {
                                     setImageSize(e.target.value)
                                 }} type="range"/>
                                 <ResetButton onClick={() => {
-                                    setImageSize(100)
+                                    setImageSize(values.default.imageSize)
                                 }}/>
                             </Field>
                             {/***** Text Rotate *****/}
@@ -305,7 +314,7 @@ function Body() {
                                     setImageRotate(e.target.value)
                                 }} type="range"/>
                                 <ResetButton onClick={() => {
-                                    setImageRotate(rotateDefault)
+                                    setImageRotate(values.default.rotate)
                                 }}/>
                             </Field>
                         </Element>
@@ -317,7 +326,7 @@ function Body() {
                                     setImageOffsetX(e.target.value)
                                 }} type="range"/>
                                 <ResetButton onClick={() => {
-                                    setImageOffsetX(0)
+                                    setImageOffsetX(values.default.imageOffsetX)
                                 }}/>
                             </Field>
                             {/***** Image Y Offset *****/}
@@ -327,7 +336,7 @@ function Body() {
                                     setImageOffsetY(e.target.value)
                                 }} type="range"/>
                                 <ResetButton onClick={() => {
-                                    setImageOffsetY(0)
+                                    setImageOffsetY(values.default.imageOffsetY)
                                 }}/>
                             </Field>
                         </Element>
@@ -365,7 +374,7 @@ function Body() {
                     </Element>
                 </Element>
             </Element>
-        </Box>
+        </Element>
     );
 }
 
