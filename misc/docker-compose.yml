@@ -6,7 +6,7 @@ services:
     container_name: icon-maker
     volumes:
       - $PWD/config.ini:/app/config.ini
-      - $PWD/static:/app/static
+      - $PWD/fonts:/app/fonts
     ports:
       - 80:80
     restart: unless-stopped

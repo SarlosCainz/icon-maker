@@ -4,6 +4,7 @@ from flask import Flask, send_file, request, jsonify
 from flask_cors import CORS
 
 import img
+import util
 
 app = Flask(__name__)
 CORS(app)
@@ -22,13 +23,25 @@ def api_img():
     return response
 
 
-@app.route('/api/fonts', methods=['GET'])
-def api_fonts():
-    result = []
+@app.route('/api/lang', methods=['GET'])
+def api_lang():
+    result = {
+        "default": "en",
+        "list": []
+    }
+    lang_conf = config["lang"]
 
-    for key in config["fonts"]:
-        font = config.get("fonts", key)
-        result.append({"idx": key, "font": font})
+    accept_lang = util.get_param(request.headers, "Accept-Language", "en")
+    for lang in accept_lang.split(","):
+        lang = lang.split(";")[0].lower()
+        if lang in lang_conf:
+            result["default"] = lang
+            app.logger.debug(lang)
+            break
+
+    for key in config["lang"]:
+        lang = config.get("lang", key)
+        result["list"].append({"idx": key, "lang": lang})
 
     return jsonify(result)
 

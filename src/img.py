@@ -1,3 +1,4 @@
+import os
 import io
 import zipfile
 
@@ -46,14 +47,15 @@ def make(params, files, config, logger):
     text = util.get_param(params, "text", "")
     if text:
         text_color = util.get_param(params, "text_color", "#ffffff")
-        font_idx = util.get_param(params, "font", 0)
         font_style = util.get_int_param(params, "font_style", 2)
         font_size = util.get_int_param(params, "font_size", 100, for_ios, for_web)
 
-        font = config.get("fonts", font_idx)
+        lang = util.get_param(params, "lang", "en")
+        font = config.get("fonts", lang)
         font_style_name = font_styles[font_style]
-        font_name = "static/{}-{}.ttf".format(font, font_style_name)
-        font = ImageFont.truetype(font_name, font_size)
+        font_name = font.format(font_style_name)
+        font_path = os.path.join("fonts", font_name)
+        font = ImageFont.truetype(font_path, font_size)
 
         offset_x = util.get_int_param(params, "text_offset_x", 0, for_ios, for_web)
         offset_y = util.get_int_param(params, "text_offset_y", 0, for_ios, for_web)
@@ -62,7 +64,7 @@ def make(params, files, config, logger):
         font_draw = ImageDraw.Draw(font_img)
 
         lines = text.splitlines()
-        coefficient = config.getfloat("coefficient", font_idx)
+        coefficient = config.getfloat("coefficient", lang)
         y = icon.size[1] / 2 - len(lines) * (font_size * coefficient) + offset_y
         for line in lines:
             length = draw.textlength(line, font=font)
@@ -95,7 +97,6 @@ def make(params, files, config, logger):
             style_draw.ellipse((0, 0, icon_size[0] - 1, icon_size[1] - 1), fill=255)
         icon.putalpha(style_img)
 
-    logger.debug("forIOS = {}, forWeb = {}".format(for_ios, for_web))
     file = io.BytesIO()
     if for_ios:
         with zipfile.ZipFile(file, "w", compression=zipfile.ZIP_DEFLATED) as z:
@@ -114,6 +115,7 @@ def make(params, files, config, logger):
         icon.save(file, "png")
 
     file.seek(0)
+
     return file
 
 

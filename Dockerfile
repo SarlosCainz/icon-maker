@@ -3,7 +3,7 @@ FROM sarlos/python:3.9-im
 RUN apt-get update \
  && apt-get install -y nginx \
  && apt-get clean
-RUN pip3 install flack flask-cors pillow Wand uwsgi
+RUN pip3 install flack flask-cors pillow Wand fasttext-langdetect wget uwsgi
 
 RUN mkdir /var/www/icon-maker
 COPY ui/dist /var/www/icon-maker/

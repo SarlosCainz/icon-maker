@@ -20,5 +20,8 @@ push-test:
 build-npm:
 	cd ui && npm run build
 
+release:
+	cd misc && make
+
 clean:
 	docker system prune -f

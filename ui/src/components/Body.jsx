@@ -1,6 +1,6 @@
 import {useState, useEffect, useCallback, useContext} from "react";
 import axios from "axios";
-import {Box, Form, Button, Element} from "react-bulma-components";
+import {Form, Button, Element} from "react-bulma-components";
 import Field from "./Field";
 import ResetButton from "./ResetButton";
 import {values} from "../values";
@@ -14,14 +14,14 @@ function Body() {
     const img_api = api_url + "img";
 
     const [sendData, setSendData] = useState(null);
-    const [fonts, setFonts] = useState([]);
+    const [langs, setLangs] = useState([]);
     const [icon, setIcon] = useState("");
     const [style, setStyle] = useState(values.default.style);
     const [prevStyle, setPrevStyle] = useState(values.default.style);
     const [textColor, setTextColor] = useState(values.default.textColor);
     const [bgColor, setBgColor] = useState(values.default.bgColor);
     const [text, setText] = useState(values.default.text);
-    const [font, setFont] = useState(values.default.font);
+    const [lang, setLang] = useState(values.default.lang);
     const [fontStyle, setFontStyle] = useState(values.default.fontStyle);
     const [fontSize, setFontSize] = useState(values.default.fontSize);
     const [fontRotate, setFontRotate] = useState(values.default.rotate);
@@ -39,9 +39,10 @@ function Body() {
     const [forWeb, setForWeb] = useState(0);
 
     useEffect(() => {
-        axios.get(api_url + "fonts")
+        axios.get(api_url + "lang")
             .then((res) => {
-                setFonts(res.data);
+                setLangs(res.data.list);
+                setLang(res.data.default);
             });
     }, []);
 
@@ -51,7 +52,6 @@ function Body() {
         data.append("text_color", textColor);
         data.append("bg_color", bgColor);
         data.append("text", text);
-        data.append("font", font);
         data.append("font_style", fontStyle);
         data.append("text_offset_x", textOffsetX);
         data.append("text_offset_y", textOffsetY);
@@ -63,6 +63,7 @@ function Body() {
         data.append("image_rotate", 360 - imageRotate - 180);
         data.append("image_offset_x", imageOffsetX);
         data.append("image_offset_y", imageOffsetY);
+        data.append("lang", lang);
         setSendData(data);
 
         const config = {
@@ -77,7 +78,7 @@ function Body() {
                 }
             })
             .catch(error);
-    }, [style, textColor, bgColor, text, font, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
+    }, [style, textColor, bgColor, text, lang, fontStyle, fontSize, fontRotate, textOffsetX, textOffsetY,
         round, image, imageSize, imageRotate, imageOffsetX, imageOffsetY]);
 
     useEffect( () => {
@@ -85,7 +86,6 @@ function Body() {
         setTextColor(values.default.textColor);
         setTextOffsetX(values.default.textOffsetX);
         setTextOffsetY(values.default.textOffsetY);
-        setFont(values.default.font);
         setFontSize(values.default.fontSize);
         setFontStyle(values.default.fontStyle);
         setFontRotate(values.default.rotate);
@@ -124,13 +124,13 @@ function Body() {
         const value = e.target.checked ? 1 : 0
         setForIOS(value);
         if (value === 1) {
-            if (style != 0) {
+            if (style !== 0) {
                 setPrevStyle(style);
                 setStyle(0);
                 setForWeb(0)
             }
         } else {
-            if (style != prevStyle) {
+            if (style !== prevStyle) {
                 setStyle(prevStyle);
             }
         }
@@ -174,11 +174,11 @@ function Body() {
                 <img src={icon} alt="image" style={{width: "256px"}}/>
                 <Element mt={3}>
                     <Element display="inline-block" textAlign="left">
-                        <Form.Checkbox value={1} onChange={handleChangeForIOS}>
+                        <Form.Checkbox value="1" onChange={handleChangeForIOS}>
                             for iPhone/iPad App
                         </Form.Checkbox>
                         <br />
-                        <Form.Checkbox value={1} checked={forWeb == 1} disabled={forIOS == 1} onChange={handleChangeForWeb}>
+                        <Form.Checkbox value="1" checked={forWeb === 1} disabled={forIOS === 1} onChange={handleChangeForWeb}>
                             for Web
                         </Form.Checkbox>
                     </Element>
@@ -193,18 +193,17 @@ function Body() {
                     <Element display="flex">
                         {/***** Text *****/}
                         <Field label="Text">
-                            <Form.Textarea value={text} onChange={(e) => {
-                                setText(e.target.value)
-                            }} cols={2} rows={2}/>
+                            <Form.Textarea value={text} cols={2} rows={2}
+                                           onChange={(e)=>{setText(e.target.value)}} />
                         </Field>
-                        <Field label="Font" className="ml-3">
-                            <Form.Select value={font}
+                        <Field label="Language" className="ml-3">
+                            <Form.Select value={lang}
                                          onChange={(e) => {
-                                             setFont(e.target.value)
+                                             setLang(e.target.value)
                                          }}>
-                                {fonts.map((value, index) => {
+                                {langs.map((value, index) => {
                                     return (
-                                        <option key={index} value={value.idx}>{value.font}</option>
+                                        <option key={index} value={value.idx}>{value.lang}</option>
                                     );
                                 })}
                             </Form.Select>
@@ -222,22 +221,22 @@ function Body() {
                         <Element ml={5}>
                             {/***** Text Style *****/}
                             <Field label="Style">
-                                <Form.Radio name="font_style" checked={fontStyle == 0} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 0} onChange={() => {
                                     setFontStyle(0)
                                 }} value={fontStyle}>Thin</Form.Radio>
-                                <Form.Radio name="font_style" checked={fontStyle == 1} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 1} onChange={() => {
                                     setFontStyle(1)
                                 }} value={fontStyle}>Light</Form.Radio>
-                                <Form.Radio name="font_style" checked={fontStyle == 2} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 2} onChange={() => {
                                     setFontStyle(2)
                                 }} value={fontStyle}>Regular</Form.Radio>
-                                <Form.Radio name="font_style" checked={fontStyle == 3} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 3} onChange={() => {
                                     setFontStyle(3)
                                 }} value={fontStyle}>Medium</Form.Radio>
-                                <Form.Radio name="font_style" checked={fontStyle == 4} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 4} onChange={() => {
                                     setFontStyle(4)
                                 }} value={fontStyle}>Bold</Form.Radio>
-                                <Form.Radio name="font_style" checked={fontStyle == 5} onChange={() => {
+                                <Form.Radio name="font_style" checked={fontStyle === 5} onChange={() => {
                                     setFontStyle(5)
                                 }} value={fontStyle}>Black</Form.Radio>
 
@@ -355,15 +354,15 @@ function Body() {
                         <Element ml={5}>
                             {/***** Style *****/}
                             <Field label="Style">
-                                <Form.Radio name="style" checked={style == 0} onChange={() => {
+                                <Form.Radio name="style" checked={style === 0} onChange={() => {
                                     setStyle(0)
-                                }} value={style} disabled={forIOS == 1}>Square</Form.Radio>
-                                <Form.Radio name="style" checked={style == 1} onChange={() => {
+                                }} value={style} disabled={forIOS === 1}>Square</Form.Radio>
+                                <Form.Radio name="style" checked={style === 1} onChange={() => {
                                     setStyle(1)
-                                }} value={style} disabled={forIOS == 1}>Round</Form.Radio>
-                                <Form.Radio name="style" checked={style == 2} onChange={() => {
+                                }} value={style} disabled={forIOS === 1}>Round</Form.Radio>
+                                <Form.Radio name="style" checked={style === 2} onChange={() => {
                                     setStyle(2)
-                                }} value={style} disabled={forIOS == 1}>Circle</Form.Radio>
+                                }} value={style} disabled={forIOS === 1}>Circle</Form.Radio>
                             </Field>
                             {/***** Round *****/}
                             <Field label="Round">

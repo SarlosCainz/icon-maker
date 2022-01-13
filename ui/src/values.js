@@ -4,7 +4,7 @@ export const values = {
         textColor: "#f0f0f0",
         textOffsetX: 0,
         textOffsetY: 0,
-        font: 1,
+        lang: "en",
         fontStyle: 3,
         fontSize: 250,
         fontSizeMin: 20,
