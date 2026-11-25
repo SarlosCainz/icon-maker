@@ -1,0 +1,9 @@
+# ビルドコンテキストに入れないもの (README の「ビルド」を参照)
+.git
+.gitignore
+.idea
+.venv
+ui/node_modules
+ui/src
+ui/vite.config.js
+ui/package-lock.json

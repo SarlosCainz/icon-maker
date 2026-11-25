@@ -1,0 +1,9 @@
+/.idea/
+/.serena/
+/ui/dist/
+/ui/node_modules/
+# フォント本体はリポジトリに入れない (README の「フォントを用意する」を参照)
+/misc/fonts/*
+!/misc/fonts/.gitkeep
+# task build が pyproject.toml から生成する
+/requirements.txt
