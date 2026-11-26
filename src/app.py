@@ -8,11 +8,21 @@ import util
 
 app = Flask(__name__)
 CORS(app)
+# アップロードの上限。misc/nginx.conf の client_max_body_size と合わせる (docs/validation.md V7)
+app.config["MAX_CONTENT_LENGTH"] = 8 * 1024 * 1024
 if not app.debug:
     logging.basicConfig(level=logging.INFO)
 
 config = ConfigParser()
 config.read("config.ini", 'UTF-8')
+
+
+@app.errorhandler(util.InvalidParam)
+def handle_invalid_param(e):
+    """フォームの値が不正なときは 400 を返す (docs/validation.md V1/V2)"""
+    app.logger.info("invalid parameter: %s", e)
+
+    return jsonify({"error": "invalid parameter", "param": e.param, "reason": e.reason}), 400
 
 
 @app.route('/')

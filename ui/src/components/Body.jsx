@@ -162,7 +162,7 @@ function Body() {
     const error = useCallback( err => {
         const status = err.response.status;
         if (status === 413) {
-            alert("Client intended to send too large body.\nThe size of the image file that can be handled is up to 500KByte.");
+            alert("Client intended to send too large body.\nThe size of the image file that can be handled is up to 8MByte.");
         } else {
             alert(err.response.statusText);
         }
@@ -290,7 +290,7 @@ function Body() {
                     </Element>
                     <hr/>
                     {/***** Image *****/}
-                    <Field label="Image" note="* The file size is up to 500KByte.">
+                    <Field label="Image" note="* The file size is up to 8MByte.">
                         <Form.InputFile onChange={handleChangeImage} filename={filename}
                                         inputProps={{accept: "image/jpeg, image/png"}}/>
                         <ResetButton onClick={handleClearImage}/>
