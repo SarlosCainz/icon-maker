@@ -2,7 +2,7 @@ version: 3
 
 vars:
   NAME: icon-maker
-  VERSION: 1.0.11
+  VERSION: 1.0.12
   # 既定は arm64。別のアーキテクチャで動かす場合は task build PLATFORM=linux/amd64 で上書きする
   PLATFORM: linux/arm64
   IMAGE: "{{ .NAME }}:{{ .VERSION }}"
