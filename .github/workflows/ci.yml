@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    name: API (pytest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Wand が ImageMagick の共有ライブラリを dlopen するため (docs/test.md T6)
+      - name: Install ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libmagickwand-dev
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # uwsgi はテストに不要で、ソースからのビルドに時間がかかるため入れない (docs/test.md T11)
+      - name: Install dependencies
+        run: uv sync --frozen --group test --no-install-package uwsgi
+
+      # -ra で skip のサマリを出す。ImageMagick が必要なテストが skip されていたら上の手順が効いていない
+      - name: Run tests
+        run: uv run --no-sync pytest -ra
+
+  ui:
+    name: UI (build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ui
+
+      - name: Build
+        run: npm run build
+        working-directory: ui
+
+  image:
+    name: Image (smoke)
+    # 時間がかかるため PR では走らせない (docs/test.md T14)
+    if: github.event_name != 'pull_request'
+    needs: [api, ui]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - uses: arduino/setup-task@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/setup-buildx-action@v3
+
+      # ビルド手順の単一ソースは Taskfile.yml に置く。ランナーは amd64 なので PLATFORM を上書きする
+      - name: Build image
+        run: task build PLATFORM=linux/amd64 VERSION=ci
+
+      - name: Start container
+        run: |
+          docker run -d --name icon-maker -p 8000:80 \
+            -v "$PWD/misc/config.ini:/app/config.ini:ro" \
+            icon-maker:ci
+
+      # フォントはリポジトリに無いため /api/img は確認しない (docs/test.md T10)
+      - name: Check endpoints
+        run: |
+          for path in / /api/lang; do
+            for i in $(seq 1 30); do
+              code=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:8000${path}" || true)
+              if [ "$code" = "200" ]; then
+                echo "${path} -> 200"
+                break
+              fi
+              if [ "$i" = "30" ]; then
+                echo "${path} -> ${code} (timed out)"
+                exit 1
+              fi
+              sleep 1
+            done
+          done
+          curl -s http://localhost:8000/api/lang
+
+      - name: Container logs
+        if: failure()
+        run: docker logs icon-maker

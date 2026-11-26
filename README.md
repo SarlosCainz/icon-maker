@@ -120,6 +120,20 @@ uv sync && cd src && uv run flask --app app run --port 5000
   `misc/config.ini` と `misc/fonts/` へのシンボリックリンクを置く
 - ビルド成果物を通して確認したいときは `task build` のあと「ローカルでの起動」の手順を使う
 
+## テスト
+
+```bash
+uv sync --group test --no-install-package uwsgi
+uv run --no-sync pytest
+```
+
+- `uwsgi` はテストでは使わず、ソースからのビルドに時間がかかるため入れていない
+- `favicon.ico` の生成だけ ImageMagick (Wand) を使う。入っていない環境ではそのテストが skip される
+  (macOS なら `brew install imagemagick`)
+- テストは `tests/fixtures/fonts/` のフォント 1 本だけを使うので、**`misc/fonts/` を用意していなくても通る**
+- GitHub Actions で PR と `main` への push のときに動く (`.github/workflows/ci.yml`)。
+  イメージのビルドとコンテナの死活確認は `main` への push と手動実行のときだけ走る
+
 ## 設定
 
 `misc/config.ini` でアイコンの生成に関わる値を持っている。

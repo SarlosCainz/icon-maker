@@ -7,3 +7,6 @@
 !/misc/fonts/.gitkeep
 # task build が pyproject.toml から生成する
 /requirements.txt
+__pycache__/
+.pytest_cache/
+/.venv/
